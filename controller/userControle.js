@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 
 const user = require('./../models/userModel')
+const tokenVerify = require("../util/helpers")
 
 exports.signUp = async (req,res,next)=>{
     const data = req.body;
@@ -23,6 +24,28 @@ exports.signUp = async (req,res,next)=>{
             res.status(500).json({ message: "An error occurred while adding the user." });
         }
     }
+}
 
+exports.login = async (req,res,next) =>{
+    const data = req.body
+    try{ 
+        const userToLogin = await user.findOne({where:{email : data.email}})
 
+        if(!userToLogin){
+            res.status(404).json({message : "user not found"})
+        }
+
+        const ismatch = await bcrypt.compare(data.password,userToLogin.password)
+        if(ismatch){
+            const userToken = tokenVerify.generateToken(userToLogin.id,userToLogin.email)
+            res.status(200).json({message : "login successful" , token : userToken})   
+        }
+        else{
+            res.status(401).json({message : "incorrect password"})
+        }
+    }
+    catch(err){
+        console.log(err)
+        res.status(500).json({message : "server error, please try again"})
+    }
 }
