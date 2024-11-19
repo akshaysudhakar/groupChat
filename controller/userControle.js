@@ -32,7 +32,7 @@ exports.login = async (req,res,next) =>{
         const userToLogin = await user.findOne({where:{email : data.email}})
 
         if(!userToLogin){
-            res.status(404).json({message : "user not found"})
+            return res.status(404).json({message : "user not found"})
         }
 
         const ismatch = await bcrypt.compare(data.password,userToLogin.password)

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Group Chat</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.7/axios.min.js"></script>
+  <style>
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 10px;
+    }
+    .input-section {
+      display: flex;
+      border-top: 1px solid #ddd;
+      padding: 10px;
+    }
+    .input-section input {
+      flex: 1;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container chat-container">
+    <!-- Messages Section -->
+    <div id="messages" class="messages">
+      <!-- Messages will appear here -->
+    </div>
+
+    <!-- Input Section -->
+    <div class="input-section">
+      <input type="text" id="messageInput" class="form-control" placeholder="Type your message">
+      <button id="sendButton" class="btn btn-primary">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token'); // Get token from local storage
+    const messagesDiv = document.getElementById('messages');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+
+    document.addEventListener('DOMContentLoaded', loadMessages);
+
+    function loadMessages(){
+        axios.get('http://localhost:4000/chat/getchat', {headers : {"authorisation" : token}})
+        .then(response=> {
+            console.log(response.data)
+        })
+        .catch(err=>{
+            console.log(err)
+        })
+    }
+    
+
+    // Send message on button click
+    sendButton.addEventListener('click', handleSendMessage);
+
+    function handleSendMessage(event){
+      const message = messageInput.value.trim();
+      if (!message) {
+        alert('Please enter a message.');
+        return;
+      }
+
+      axios.post('http://localhost:4000/chat/postchat', { message }, {
+        headers: { "authorisation": token }
+      })
+      .then(response => {
+        // Display the new message in the messages section
+        const newMessage = document.createElement('div');
+        newMessage.textContent = message;
+        messagesDiv.appendChild(newMessage);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+        messageInput.value = ''; // Clear the input field
+      })
+      .catch(error => {
+        console.error('Error sending message:', error);
+        alert('Failed to send the message.');
+      });
+    }
+  </script>
+</body>
+</html>
