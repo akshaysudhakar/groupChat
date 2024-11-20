@@ -28,14 +28,13 @@ exports.getChats = async (req,res,next) => {
                     attributes : ['name']
                 },
             ],
-            attributes : ['message']
+            attributes : ['message','id']
         })
 
         if(!messages){
             return res.status(404).json({message : 'no chats yet'})
         }
         else{
-            console.log(messages)
             return res.status(200).json(messages);
         }
     }
