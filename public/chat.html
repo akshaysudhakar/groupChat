@@ -55,7 +55,12 @@
     function loadMessages(){
         axios.get('http://localhost:4000/chat/getchat', {headers : {"authorisation" : token}})
         .then(response=> {
-            console.log(response.data)
+            response.data.forEach(element => {
+              const newMessage = document.createElement('div');
+              newMessage.textContent = `${element.user.name}   ${element.message}`;
+              messagesDiv.appendChild(newMessage);
+              messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
+            });
         })
         .catch(err=>{
             console.log(err)
@@ -77,12 +82,8 @@
         headers: { "authorisation": token }
       })
       .then(response => {
-        // Display the new message in the messages section
-        const newMessage = document.createElement('div');
-        newMessage.textContent = message;
-        messagesDiv.appendChild(newMessage);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
-        messageInput.value = ''; // Clear the input field
+        messageInput.value = '';
+        console.log(response.data)
       })
       .catch(error => {
         console.error('Error sending message:', error);

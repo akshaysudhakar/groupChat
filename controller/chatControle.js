@@ -1,4 +1,5 @@
 const message = require('./../models/messageModel');
+const user = require('./../models/userModel');
 
 
 exports.postChats = async (req,res,next) => {
@@ -19,5 +20,27 @@ exports.postChats = async (req,res,next) => {
 }
 
 exports.getChats = async (req,res,next) => {
-    return res.status(200).json({message : "success"})
+    try{
+        const messages = await message.findAll({
+            include : [
+                {
+                    model : user,
+                    attributes : ['name']
+                },
+            ],
+            attributes : ['message']
+        })
+
+        if(!messages){
+            return res.status(404).json({message : 'no chats yet'})
+        }
+        else{
+            console.log(messages)
+            return res.status(200).json(messages);
+        }
+    }
+    catch(err){
+        console.log(err);
+        res.status(500).json({message : 'internal server error'})
+    }
 }
