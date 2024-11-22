@@ -52,27 +52,51 @@
 
     document.addEventListener('DOMContentLoaded', loadMessages);
 
-    let lastMessageId = 0; // Track the ID of the last message fetched
 
     function loadMessages() {
-      setInterval(() => {
-        axios.get('http://localhost:4000/chat/getchat', { headers: { "authorisation": token } })
+      const messages = JSON.parse(localStorage.getItem('chats'));
+      if(messages!==null){
+        messages.forEach(element => {
+        const newMessage = document.createElement('div');
+        newMessage.textContent = `${element.name}   ${element.message}`;
+        messagesDiv.appendChild(newMessage);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight; 
+      })}
+        setInterval(()=>{
+        const lastMessageId = localStorage.getItem('lastMessageId') 
+        const messages = JSON.parse(localStorage.getItem('chats'));
+        axios.get('http://localhost:4000/chat/getchat', { headers: { "authorisation": token }, params: { lastMessageId: lastMessageId }})
           .then(response => {
-            response.data.forEach(element => {
-              if (element.id > lastMessageId) { // Only append messages with a new ID
-                const newMessage = document.createElement('div');
-                newMessage.textContent = `${element.user.name}   ${element.message}`;
-                messagesDiv.appendChild(newMessage);
-                messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll to the bottom
-                lastMessageId = element.id; // Update the last message ID
-              }
-            });
+            console.log(lastMessageId)
+            if (lastMessageId === null){
+              localStorage.setItem('chats',JSON.stringify(response.data.messages));
+              localStorage.setItem('lastMessageId',JSON.stringify(response.data.latestMessageId))
+              handleNewMessages(response.data.messages);
+            } 
+            else if(lastMessageId < response.data.latestMessageId){
+              localStorage.setItem('lastMessageId',response.data.latestMessageId)
+              handleNewMessages(response.data.messages);
+            }
           })
           .catch(err => {
-            console.log(err);
+            console.log("error found",lastMessageId);
           });
-      }, 1000); // Call the API every 1 second
+      },1000)
     }
+
+    function handleNewMessages(newChats){
+      const currentChat = JSON.parse(localStorage.getItem('chats'));
+      newChats.forEach(element => {
+        const newMessage = document.createElement('div');
+        newMessage.textContent = `${element.name}   ${element.message}`;
+        messagesDiv.appendChild(newMessage);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight; 
+        currentChat.push(element)
+        currentChat.shift()
+      });
+      localStorage.setItem('chats', JSON.stringify(currentChat))
+    }
+
     
 
     // Send message on button click

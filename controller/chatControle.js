@@ -1,5 +1,6 @@
 const message = require('./../models/messageModel');
 const user = require('./../models/userModel');
+const { Op } = require('sequelize');
 
 
 exports.postChats = async (req,res,next) => {
@@ -19,27 +20,55 @@ exports.postChats = async (req,res,next) => {
     }
 }
 
-exports.getChats = async (req,res,next) => {
-    try{
+
+
+exports.getChats = async (req, res, next) => {
+    console.log('message id', req.query.lastMessageId);
+
+    try {
+        const lastMessageId = req.query.lastMessageId;
+        let whereClause = {};
+
+        // If lastMessageId is valid, set the where clause
+        if (lastMessageId && !isNaN(lastMessageId)) {
+            whereClause.id = { [Op.gt]: lastMessageId };  // Fetch messages greater than lastMessageId
+        }
+
+        // Fetch 10 messages (either from the latest or based on lastMessageId)
         const messages = await message.findAll({
-            include : [
+            where: whereClause,
+            include: [
                 {
-                    model : user,
-                    attributes : ['name']
+                    model: user,
+                    attributes: ['name']
                 },
             ],
-            attributes : ['message','id']
-        })
+            attributes: ['message', 'id'],
+            limit: 10,  // Limit the results to 10 messages
+            order: [['id', 'DESC']]  // Order by id descending to get the most recent messages first
+        });
 
-        if(!messages){
-            return res.status(404).json({message : 'no chats yet'})
+        // If no messages are found, return a 404 response
+        if (messages.length === 0) {
+            return res.status(404).json({ message: 'No chats yet' });
         }
-        else{
-            return res.status(200).json(messages);
-        }
+
+        // Reverse the messages to return them in ascending order (oldest first)
+        const reversedMessages = messages.reverse();
+        const chats = reversedMessages.map((element) => ({
+            message: element.message,
+            name: element.user.name
+        }));
+
+        // Get the latest message ID from the reversed messages
+        const latestMessageId = reversedMessages[reversedMessages.length - 1].id;
+
+        return res.status(200).json({
+            messages: chats,
+            latestMessageId: latestMessageId
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Internal server error' });
     }
-    catch(err){
-        console.log(err);
-        res.status(500).json({message : 'internal server error'})
-    }
-}
+};
