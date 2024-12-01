@@ -174,7 +174,10 @@ exports.createGroup = async (req,res,next) => {
       await newGroup.addUsers(memberIds);
 
       await userGroup.update(
-        { isAdmin: true },  // Update isAdmin to true
+        { 
+            isAdmin: true,
+            isCreator: true 
+        },  
         {
           where: {
             userId: adminId,

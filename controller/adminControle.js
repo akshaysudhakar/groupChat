@@ -5,6 +5,10 @@ const group = require('./../models/groupModel');
 const userGroup = require('./../models/userGroupModel');
 const tokenVerify = require("../util/helpers")
 
+const { Op } = require('sequelize');
+
+const sequelize = require('sequelize');
+
 
 exports.loadDetails = async (req,res)=> {
     const userId = req.user.id;
@@ -14,7 +18,10 @@ exports.loadDetails = async (req,res)=> {
             include: {
               model: group,
               where: { id: groupId },
-              through: { attributes: [] } // Exclude `UserGroups` join table fields from the result
+              through: {
+                where: { isAdmin: false }, 
+                attributes: [] 
+              } 
             },
             attributes : ['name']
           })
@@ -31,7 +38,16 @@ exports.loadDetails = async (req,res)=> {
             attributes : ['name']
           });
 
-          const allUsers = await user.findAll({attributes : ['name']}); // Fetches all users
+          const allUsers = await user.findAll({
+            attributes: ['id', 'name'], // Fetch user id and name
+            where: {
+              id: {
+                [Op.notIn]: sequelize.literal(`
+                  (SELECT userId FROM UserGroups WHERE groupId = ${groupId})
+                `)
+              }
+            }
+          });
 
           const groupDetails = await group.findOne({
             where : {id : groupId},
@@ -139,15 +155,20 @@ exports.removeAdmin= async (req,res)=> {
       }
     });
 
-    await userGroup.update(
+    const [updatedRowCount] = await userGroup.update(
       { isAdmin: false }, // Set isAdmin to false
       {
         where: {
           userId: User.id,
-          groupId: groupId
+          groupId: groupId,
+          isCreator: false
         }
       }
     );
+
+    if(!updatedRowCount){
+      res.status(200).json({message : `cannot remove ${memberNames} as admin as he is the creator`});
+    }
 
     res.status(200).json({message : `removed ${memberNames} as admin successfully`});
   }

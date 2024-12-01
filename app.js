@@ -1,7 +1,15 @@
 const express = require('express')
 const path = require('path');
+const https = require('https');
+const fs = require('fs');
 
 const sequelize = require('./util/database');
+
+const app = express();
+
+const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
 
 const user = require('./models/userModel');
 const message = require('./models/messageModel');
@@ -14,7 +22,20 @@ const chatRoute = require('./routes/chatRoute')
 const groupRoute = require('./routes/groupRoute')
 const adminRoute = require('./routes/adminRoute');
 
-const app = express();
+
+const options = {
+    key: fs.readFileSync('server.key'),
+    cert: fs.readFileSync('server.crt'),
+  };
+
+
+app.use(cors({
+    origin: '*' ,
+    methods: 'GET,POST,PUT,DELETE',
+    credentials: true, // Include credentials if necessary
+}));
+app.use(helmet());
+app.use(compression());
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -34,11 +55,16 @@ user.hasMany(groupMessage);
 groupMessage.belongsTo(group);
 group.hasMany(groupMessage);
 
+
 sequelize.sync()
-//sequelize.sync({force : true})
-.then(()=>{
-    console.log('database synced successfully')
-    app.listen(4000,()=>{
-        console.log('server is listening')
-    }) 
-})
+  .then(() => {
+    console.log('Database synced successfully');
+
+    // Create HTTPS server
+    https.createServer(options, app).listen(4000, () => {
+      console.log('Server is listening on https://localhost:4000');
+    });
+  })
+  .catch((err) => {
+    console.error('Error syncing database:', err);
+  });
