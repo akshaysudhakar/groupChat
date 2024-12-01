@@ -7,16 +7,17 @@ const secret_key = process.env.USERID_SECRET_KEY;
 
 
 const verifyToken  = (req,res,next)=> {
-    const token = req.headers.authorisation;
-    jwt.verify(token,secret_key, (error,decoded)=>{
+    const groupToken =  req.headers['grouptoken'];;
+    jwt.verify(groupToken,secret_key, (error,decoded)=>{
         if (error){
             console.log(error)
-            return res.status(401).json({message: 'authentication error, please try again'})
+            return res.status(401).json({message: `${groupToken},authentication error while getting group details, please try again`})
         }else {              
-            req.user = decoded
+            req.group = decoded
             next()
         }
     })
 }
+
 
 module.exports = verifyToken;
