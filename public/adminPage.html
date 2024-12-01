@@ -85,7 +85,7 @@
 
     document.addEventListener("DOMContentLoaded", ()=> {
         console.log('token',token,"groupToken",groupToken);
-        axios.get('http://localhost:4000/admin/loadDetails', {headers: { "authorisation": token, "groupToken" : groupToken }})
+        axios.get('https://ec2-13-234-76-163.ap-south-1.compute.amazonaws.com:4000/admin/loadDetails', {headers: { "authorisation": token, "groupToken" : groupToken }})
         .then(response=> {
             console.log(response.data)
             populateAdmins(response.data.groupAdmins);
@@ -121,7 +121,7 @@
  }
 
     function removeAdmin(adminName){
-      axios.post('http://localhost:4000/admin/removeAdmin',{adminName},{headers: { "authorisation": token, "groupToken" : groupToken }})
+      axios.post('https://ec2-13-234-76-163.ap-south-1.compute.amazonaws.com:4000/admin/removeAdmin',{adminName},{headers: { "authorisation": token, "groupToken" : groupToken }})
       .then(response=> {
         console.log(response.data);
         alert(`${response.data.message}`)
@@ -167,7 +167,7 @@
       const data = {
         newMembers:newMembers
       }
-      axios.post('http://localhost:4000/admin/addNewMembers',data,{headers: { "authorisation": token, "groupToken" : groupToken }})
+      axios.post('https://ec2-13-234-76-163.ap-south-1.compute.amazonaws.com:4000/admin/addNewMembers',data,{headers: { "authorisation": token, "groupToken" : groupToken }})
       .then(response=> {
         console.log(response.data);
         alert(`${response.data.message}`)
@@ -182,7 +182,7 @@
       const data = {
         removeMembers:removeMembers
       }
-      axios.post('http://localhost:4000/admin/removeMembers',data,{headers: { "authorisation": token, "groupToken" : groupToken }})
+      axios.post('https://ec2-13-234-76-163.ap-south-1.compute.amazonaws.com:4000/admin/removeMembers',data,{headers: { "authorisation": token, "groupToken" : groupToken }})
       .then(response=> {
         console.log(response.data);
         alert(`${response.data.message}`)
@@ -197,7 +197,7 @@
       const data = {
         adminMembers:adminMembers
       }
-      axios.post('http://localhost:4000/admin/makeAdmin',data,{headers: { "authorisation": token, "groupToken" : groupToken }})
+      axios.post('https://ec2-13-234-76-163.ap-south-1.compute.amazonaws.com:4000/admin/makeAdmin',data,{headers: { "authorisation": token, "groupToken" : groupToken }})
       .then(response=> {
         console.log(response.data);
         alert(`${response.data.message}`)
