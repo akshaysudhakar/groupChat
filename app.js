@@ -61,7 +61,7 @@ sequelize.sync()
     console.log('Database synced successfully');
 
     // Create HTTPS server
-    https.createServer(options, app).listen(4000, '0.0.0.0',() => {
+    https.createServer(options, app).listen(3000, '0.0.0.0',() => {
       console.log('Server is listening');
     });
   })
