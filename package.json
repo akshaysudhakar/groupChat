@@ -18,6 +18,8 @@
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.11.4",
-    "sequelize": "^6.37.5"
+    "sequelize": "^6.37.5",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
   }
 }

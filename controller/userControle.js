@@ -38,7 +38,7 @@ exports.login = async (req,res,next) =>{
         const ismatch = await bcrypt.compare(data.password,userToLogin.password)
         if(ismatch){
             const userToken = tokenVerify.generateToken(userToLogin.id,userToLogin.email)
-            res.status(200).json({message : "login successful" , token : userToken})   
+            return res.status(200).json({message : "login successful" , token : userToken, name :userToLogin.name})   
         }
         else{
             res.status(401).json({message : "incorrect password"})

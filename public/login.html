@@ -51,8 +51,10 @@
       // Make Axios POST request to login API
       axios.post('http://localhost:3000/user/login', data)
         .then(response => {
-            const token = response.data.token
+            const token = response.data.token;
+            const userName = response.data.name;
             localStorage.setItem("token" ,token)
+            localStorage.setItem("username",userName)
             console.log(token)
             if(token){
                 window.location.href = "/chat.html"

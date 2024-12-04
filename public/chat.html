@@ -70,14 +70,18 @@
       <button id="sendButton" class="btn btn-primary">Send</button>
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.2/dist/socket.io.min.js"></script>
   <script>
+
+    const socket = io('http://localhost:3000');
+
     const token = localStorage.getItem('token'); // Get token from local storage
     const messagesDiv = document.getElementById('messages');
     const messageInput = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendButton');
     const groupSelect = document.getElementById('groupSelect')
     const openChats = document.getElementById('openChatsButton');
-    let chatInterval;
+    const userName = localStorage.getItem('username');
 
 
     document.addEventListener('DOMContentLoaded', loadDetails);
@@ -100,20 +104,23 @@
       })
       .catch(err=>{
         console.log(err);
-      })
-    }
+      })}
 
 
     function loadChats(event){
-
       const groupToken = localStorage.getItem('groupToken')
-      if(chatInterval){
-        clearInterval(chatInterval);
-      }
       const selectedGroup = document.getElementById('groupSelect');
       const selectedGroupText = selectedGroup.options[selectedGroup.selectedIndex].text
       const adminButton = document.getElementById('adminSuperpowersButton');
       console.log("selectedGroup,", selectedGroupText)
+      socket.emit('join-room',selectedGroupText);
+
+      socket.removeAllListeners('recieve-message');
+
+      socket.on('recieve-message', (message)=> {
+        console.log(message);
+        handleNewMessages([message]);
+      })
 
       localStorage.removeItem('groupToken');
       localStorage.removeItem('chats');
@@ -123,58 +130,56 @@
         alert('Please select a group.');
       }
       else{
-        const messages = JSON.parse(localStorage.getItem('chats'));
-        if(messages!==null){
-        messages.forEach(element => {
-        const newMessage = document.createElement('div');
-        newMessage.textContent = `${element.name}   ${element.message}`;
-        messagesDiv.appendChild(newMessage);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight; 
-      })}
-       chatInterval = setInterval(()=>{
-        console.log("selectedGroup,", selectedGroupText)
-        const lastMessageId = localStorage.getItem('lastMessageId') 
-        const messages = JSON.parse(localStorage.getItem('chats'));
+       //chatInterval = setInterval(()=>{
+       //console.log("selectedGroup,", selectedGroupText)
+       const lastMessageId = localStorage.getItem('lastMessageId') 
+        //const messages = JSON.parse(localStorage.getItem('chats'));
         axios.post('http://localhost:3000/group/getchat',{groupName: selectedGroupText}, {headers: { "authorisation": token }, params: { lastMessageId: lastMessageId }})
           .then(response => {
             console.log(response.data)
             console.log(lastMessageId)
-            if (lastMessageId === null){
               if(response.data.isAdmin){
                 adminButton.style.display = 'inline-block';
               } 
               if(!response.data.isAdmin){
                 adminButton.style.display = 'none';
               } 
-              if (!localStorage.getItem('groupToken')){
-                localStorage.setItem('groupToken', response.data.groupToken); 
-              }
+              localStorage.setItem('groupToken', response.data.groupToken); 
               localStorage.setItem('chats',JSON.stringify(response.data.messages));
               localStorage.setItem('lastMessageId',JSON.stringify(response.data.latestMessageId))
               handleNewMessages(response.data.messages);
-            } 
-            else if(lastMessageId < response.data.latestMessageId){
-              localStorage.setItem('lastMessageId',response.data.latestMessageId)
-              handleNewMessages(response.data.messages);
-            }
-          })
+            })
           .catch(err => {
+            if(err.response.data.isAdmin){
+                adminButton.style.display = 'inline-block';
+              } 
+              if(!err.response.data.isAdmin){
+                adminButton.style.display = 'none';
+              } 
             if(err.response.data.message ==='No chats yet'){
               if (!localStorage.getItem('groupToken')){
-                localStorage.setItem('groupToken', err.response.data.groupToken);  
+                localStorage.setItem('groupToken', err.response.data.groupToken); 
+                localStorage.setItem('chats',JSON.stringify(err.response.data.messages));
+                localStorage.setItem('lastMessageId',JSON.stringify(err.response.data.latestMessageId)) 
               }
             }
             else{
               console.log(err);
             }
-          });
-      },1000)
-      }
-  }
+          })}}
 
   function handleSendMessage(event){
       const message = messageInput.value.trim();
       const groupToken = localStorage.getItem('groupToken')
+      const selectedGroup = document.getElementById('groupSelect');
+      const selectedGroupText = selectedGroup.options[selectedGroup.selectedIndex].text
+      const data = {
+        message : message,
+        name : userName
+      }
+      handleNewMessages([data])
+
+      socket.emit('send-message',data,selectedGroupText);
 
       if(groupToken === null){
         alert('please select a group')
@@ -197,7 +202,17 @@
     }
 
     function handleNewMessages(newChats){
-      const currentChat = JSON.parse(localStorage.getItem('chats'));
+      let currentChat = [];
+
+      const storedChats = localStorage.getItem('chats');
+
+      if (storedChats) {
+        try {
+          currentChat = JSON.parse(storedChats);
+        } catch (e) {
+          currentChat = [];  // Reset to empty array if parsing fails
+          }
+      }
       newChats.forEach(element => {
         const newMessage = document.createElement('div');
         newMessage.textContent = `${element.name}   ${element.message}`;

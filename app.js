@@ -3,6 +3,8 @@ const path = require('path');
 const http = require('http');
 const fs = require('fs');
 
+const socket = require('socket.io');
+
 const sequelize = require('./util/database');
 
 const app = express();
@@ -56,12 +58,29 @@ groupMessage.belongsTo(group);
 group.hasMany(groupMessage);
 
 
+
 sequelize.sync()
   .then(() => {
     console.log('Database synced successfully');
 
     // Create HTTPS server
-    http.createServer(app).listen(3000,() => {
+    const server = http.createServer(app);
+
+    const io = socket(server);
+
+    io.on('connection', socket => {
+      console.log('connected with',socket.id);
+      socket.on('send-message', (message,room)=> {
+        socket.to(room).emit('recieve-message', message)
+      })
+
+      socket.on('join-room', (room)=> {
+        console.log('joining room by users',room)
+        socket.join(room);
+      })
+    })
+    
+    server.listen(3000,() => {
       console.log('Server is listening');
     });
   })

@@ -8,9 +8,15 @@ const tokenVerify = require("../util/helpers")
 const { Op } = require('sequelize');
 
 exports.getAllUsers = async (req,res,next) => {
+    const userId = req.user.id;
     try{
         const allUsers = await user.findAll({
-            attributes: ['name']  // Only select the 'username' field
+            attributes: ['name'] , // Only select the 'username' field
+            where: {
+                id: {
+                  [Op.ne]: userId  // Exclude the current user
+                }
+              }
           });
 
         res.status(200).json({users : allUsers})
@@ -169,6 +175,7 @@ exports.createGroup = async (req,res,next) => {
   
       // Step 3: Extract user IDs from the fetched users
       const memberIds = users.map(user => user.id);
+      memberIds.push(adminId);
   
       // Step 4: Associate users with the group
       await newGroup.addUsers(memberIds);
