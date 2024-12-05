@@ -23,6 +23,7 @@ const userRoute = require('./routes/userRoute')
 const chatRoute = require('./routes/chatRoute')
 const groupRoute = require('./routes/groupRoute')
 const adminRoute = require('./routes/adminRoute');
+const fileRoute = require('./routes/fileRoute');
 
 
 /*const options = {
@@ -45,6 +46,7 @@ app.use('/user',userRoute);
 app.use('/chat',chatRoute);
 app.use('/group',groupRoute);
 app.use('/admin',adminRoute);
+app.use('/file',fileRoute);
 
 message.belongsTo(user);
 user.hasMany(message);

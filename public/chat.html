@@ -69,6 +69,10 @@
       <input type="text" id="messageInput" class="form-control" placeholder="Type your message">
       <button id="sendButton" class="btn btn-primary">Send</button>
     </div>
+    <div id="fileUploadSection" style="display: none; padding: 10px; border-top: 1px solid #ddd;">
+      <input type="file" id="fileInput" class="form-control mb-2">
+      <button id="sendFileButton" class="btn btn-secondary">Send File</button>
+    </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.2/dist/socket.io.min.js"></script>
   <script>
@@ -82,11 +86,14 @@
     const groupSelect = document.getElementById('groupSelect')
     const openChats = document.getElementById('openChatsButton');
     const userName = localStorage.getItem('username');
+    const fileUploadSection = document.getElementById('fileUploadSection');
+    const sendFileButton = document.getElementById('sendFileButton');
 
 
     document.addEventListener('DOMContentLoaded', loadDetails);
     openChats.addEventListener('click', loadChats);
     sendButton.addEventListener('click', handleSendMessage);
+    sendFileButton.addEventListener('click',handleFileSharing);
 
 
 
@@ -144,6 +151,9 @@
               if(!response.data.isAdmin){
                 adminButton.style.display = 'none';
               } 
+
+              fileUploadSection.style.display = 'inline-block';
+
               localStorage.setItem('groupToken', response.data.groupToken); 
               localStorage.setItem('chats',JSON.stringify(response.data.messages));
               localStorage.setItem('lastMessageId',JSON.stringify(response.data.latestMessageId))
@@ -202,9 +212,9 @@
     }
 
     function handleNewMessages(newChats){
-      let currentChat = [];
+      //let currentChat = [];
 
-      const storedChats = localStorage.getItem('chats');
+      /*const storedChats = localStorage.getItem('chats');
 
       if (storedChats) {
         try {
@@ -212,16 +222,28 @@
         } catch (e) {
           currentChat = [];  // Reset to empty array if parsing fails
           }
-      }
+      }*/
       newChats.forEach(element => {
         const newMessage = document.createElement('div');
-        newMessage.textContent = `${element.name}   ${element.message}`;
+        const nameContainer = document.createElement('span');
+        nameContainer.textContent = `${element.name}`;
+
+        if (element.message.startsWith('https://') || element.message.startsWith('http://')) {
+        const linkElement = document.createElement('a');
+        linkElement.href = element.message;
+        linkElement.textContent = 'Open Link';
+        linkElement.download = '';  // Open in a new tab
+        nameContainer.appendChild(linkElement);  // Add the link next to the name
+    } else {
+        nameContainer.textContent += element.message;  // Append the message to the name
+    }
+        newMessage.appendChild(nameContainer);
         messagesDiv.appendChild(newMessage);
         messagesDiv.scrollTop = messagesDiv.scrollHeight; 
-        currentChat.push(element)
-        currentChat.shift()
+    //    currentChat.push(element)
+    //    currentChat.shift()
       });
-      localStorage.setItem('chats', JSON.stringify(currentChat))
+    //  localStorage.setItem('chats', JSON.stringify(currentChat))
     }
 
     function populateGroupList(names) {
@@ -232,6 +254,43 @@
         option.textContent = name;  // Display member name
         groupSelect.appendChild(option);  // Append to dropdown
       });
+    }
+
+    function handleFileSharing(event){
+      const groupToken = localStorage.getItem('groupToken')
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];  
+      const token = localStorage.getItem('token');
+      const userName = localStorage.getItem('username');
+      const selectedGroup = document.getElementById('groupSelect');
+      const selectedGroupText = selectedGroup.options[selectedGroup.selectedIndex].text;
+
+    if (!file) {
+        alert('Please select a file to upload.');
+        return;
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+        alert('The file is too large. Please upload a file smaller than 20MB.');
+        return;
+    }
+    const formData = new FormData();
+    formData.append('file', file);
+
+    axios.post('http://localhost:3000/file/sendFile',formData,{headers: { "authorisation": token, "groupToken" : groupToken }})
+    .then(response => {
+      const fileLink = response.data.fileUrl;
+      const data = {
+        message : fileLink,
+        name : userName
+      }
+      handleNewMessages([data])
+      socket.emit('send-message',data,selectedGroupText);
+      
+    })
+    .catch(err => {
+      console.log(err)
+    })
     }
 
   </script>
