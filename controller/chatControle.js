@@ -3,6 +3,8 @@ const user = require('./../models/userModel');
 const { Op } = require('sequelize');
 
 
+
+
 exports.postChats = async (req,res,next) => {
     const userId = req.user.id;
     const data = {

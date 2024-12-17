@@ -1,11 +1,14 @@
 const message = require('./../models/messageModel');
 const groupMessage = require('./../models/groupMessageModel');
+const archivedGroupMessage = require('./../models/archivedGroupMessageModel');
 const user = require('./../models/userModel');
 const group = require('./../models/groupModel');
 const userGroup = require('./../models/userGroupModel');
 const tokenVerify = require("../util/helpers")
 
 const { Op } = require('sequelize');
+
+const cron = require('node-cron');
 
 const sequelize = require('sequelize');
 
@@ -177,6 +180,38 @@ exports.removeAdmin= async (req,res)=> {
     res.status(500).json({message : "server error! try again after some time"})
   }
 }
+
+
+cron.schedule('0 0 * * *', async () => {
+  try {
+    // Fetch all messages from the Chat table
+    const allMessages = await groupMessage.findAll();
+
+    if (allMessages.length === 0) {
+      console.log('No messages to archive.');
+      return;
+    }
+
+    // Move each message to the ArchivedChat table
+    for (const message of allMessages) {
+      // Create the archived message
+      await archivedGroupMessage.create({
+        message: message.message,
+        userId: message.userId,  // Assuming userId is a foreign key for users
+        groupId: message.groupId, // Assuming groupId is a foreign key for groups
+        createdAt: message.createdAt,
+        updatedAt: message.updatedAt,
+      });
+
+      // After archiving, delete the message from the Chat table
+      await message.destroy();
+    }
+
+    console.log('All messages archived successfully!');
+  } catch (error) {
+    console.error('Error archiving messages:', error);
+  }
+});
 
 
 

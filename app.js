@@ -18,6 +18,7 @@ const message = require('./models/messageModel');
 const group = require('./models/groupModel');
 const groupMessage = require('./models/groupMessageModel');
 const userGroup = require('./models/userGroupModel');
+const archivedGroupMessage = require('./models/archivedGroupMessageModel');
 
 const userRoute = require('./routes/userRoute')
 const chatRoute = require('./routes/chatRoute')
@@ -55,13 +56,20 @@ user.belongsToMany(group, { through: 'UserGroups' });
 group.belongsToMany(user, { through: 'UserGroups' });
 
 groupMessage.belongsTo(user);
+archivedGroupMessage.belongsTo(user);
+
 user.hasMany(groupMessage);
+user.hasMany(archivedGroupMessage);
+
 groupMessage.belongsTo(group);
+archivedGroupMessage.belongsTo(group);
+
+group.hasMany(archivedGroupMessage);
 group.hasMany(groupMessage);
 
 
 
-sequelize.sync()
+sequelize.sync({})
   .then(() => {
     console.log('Database synced successfully');
 
