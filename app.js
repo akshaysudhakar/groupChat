@@ -1,6 +1,6 @@
 const express = require('express')
 const path = require('path');
-const http = require('http');
+const https = require('https');
 const fs = require('fs');
 
 const socket = require('socket.io');
@@ -9,10 +9,10 @@ const sequelize = require('./util/database');
 
 const app = express();
 
-/*const cors = require('cors');
+const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
-*/
+
 const user = require('./models/userModel');
 const message = require('./models/messageModel');
 const group = require('./models/groupModel');
@@ -27,7 +27,7 @@ const adminRoute = require('./routes/adminRoute');
 const fileRoute = require('./routes/fileRoute');
 
 
-/*const options = {
+const options = {
     key: fs.readFileSync('server.key'),
     cert: fs.readFileSync('server.crt'),
   };
@@ -40,7 +40,7 @@ app.use(cors({
 }));
 app.use(helmet());
 app.use(compression());
-*/
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/user',userRoute);
@@ -69,12 +69,12 @@ group.hasMany(groupMessage);
 
 
 
-sequelize.sync({})
+sequelize.sync()
   .then(() => {
     console.log('Database synced successfully');
 
     // Create HTTPS server
-    const server = http.createServer(app);
+    const server = https.createServer(options,app);
 
     const io = socket(server);
 
@@ -90,7 +90,7 @@ sequelize.sync({})
       })
     })
     
-    server.listen(3000,() => {
+    server.listen(3000,'0.0.0.0',() => {
       console.log('Server is listening');
     });
   })
