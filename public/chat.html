@@ -77,7 +77,7 @@
   <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.2/dist/socket.io.min.js"></script>
   <script>
 
-    const socket = io('http://localhost:3000');
+    const socket = io('https://ec2-13-234-76-163.ap-south-1.compute.amazonaws.com:3000');
 
     const token = localStorage.getItem('token'); // Get token from local storage
     const messagesDiv = document.getElementById('messages');
@@ -99,7 +99,7 @@
 
 
     function loadDetails() {
-      axios.get('http://localhost:3000/group/getAllGroups', {headers: { "authorisation": token }})
+      axios.get('https://ec2-13-234-76-163.ap-south-1.compute.amazonaws.com:3000/group/getAllGroups', {headers: { "authorisation": token }})
       .then(response=>{
         const names = [];
         response.data.groups.forEach(element => {
@@ -141,7 +141,7 @@
        //console.log("selectedGroup,", selectedGroupText)
        const lastMessageId = localStorage.getItem('lastMessageId') 
         //const messages = JSON.parse(localStorage.getItem('chats'));
-        axios.post('http://localhost:3000/group/getchat',{groupName: selectedGroupText}, {headers: { "authorisation": token }, params: { lastMessageId: lastMessageId }})
+        axios.post('https://ec2-13-234-76-163.ap-south-1.compute.amazonaws.com:3000/group/getchat',{groupName: selectedGroupText}, {headers: { "authorisation": token }, params: { lastMessageId: lastMessageId }})
           .then(response => {
             console.log(response.data)
             console.log(lastMessageId)
@@ -198,7 +198,7 @@
         alert('Please enter a message.');
         return;
       }
-      axios.post('http://localhost:3000/group/postchat', { message }, {
+      axios.post('https://ec2-13-234-76-163.ap-south-1.compute.amazonaws.com:3000/group/postchat', { message }, {
         headers: { "authorisation": token , "groupToken" : groupToken }
       })
       .then(response => {
@@ -277,7 +277,7 @@
     const formData = new FormData();
     formData.append('file', file);
 
-    axios.post('http://localhost:3000/file/sendFile',formData,{headers: { "authorisation": token, "groupToken" : groupToken }})
+    axios.post('https://ec2-13-234-76-163.ap-south-1.compute.amazonaws.com:3000/file/sendFile',formData,{headers: { "authorisation": token, "groupToken" : groupToken }})
     .then(response => {
       const fileLink = response.data.fileUrl;
       const data = {
