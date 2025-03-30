@@ -1,5 +1,6 @@
 const message = require('./../models/messageModel');
 const groupMessage = require('./../models/groupMessageModel');
+const archivedGroupMessage = require('./../models/archivedGroupMessageModel');
 const user = require('./../models/userModel');
 const group = require('./../models/groupModel');
 const userGroup = require('./../models/userGroupModel');
@@ -53,7 +54,8 @@ exports.getChat = async (req,res,next)=>{
     const groupName = req.body.groupName;
     const userId = req.user.id;
     try {
-        const lastMessageId = req.query.lastMessageId;
+        const oldestMessageId = req.query.oldestMessageId;
+        const todayFirstMessage = req.query.todayFirstMessage;
         const groupId = await group.findOne({where : {name : groupName}})
         if (!groupId) {
             return res.status(404).json({ message: 'Group not found.' });
@@ -69,28 +71,46 @@ exports.getChat = async (req,res,next)=>{
             }
         });
 
-        
-
         let whereClause = {groupId : groupId.id};
 
-        // If lastMessageId is valid, set the where clause
-        if (lastMessageId && !isNaN(lastMessageId)) {
-            whereClause.id = { [Op.gt]: lastMessageId };  // Fetch messages greater than lastMessageId
+        //If lastMessageId is valid, set the where clause
+        if (oldestMessageId && !isNaN(oldestMessageId)) {
+            whereClause.id = { [Op.lt]: oldestMessageId };  // Fetch messages greater than lastMessageId
         }
 
-        // Fetch 10 messages (either from the latest or based on lastMessageId)
-        const messages = await groupMessage.findAll({
-            where: whereClause,
-            include: [
-                {
-                    model: user,
-                    attributes: ['name']
-                },
-            ],
-            attributes: ['message', 'id'],
-            limit: 10,  // Limit the results to 10 messages
-            order: [['id', 'DESC']]  // Order by id descending to get the most recent messages first
-        });
+        let messages;
+
+        if (todayFirstMessage){
+            messages = await archivedGroupMessage.findAll({
+                where: whereClause,
+                include: [
+                    {
+                        model: user,
+                        attributes: ['name']
+                    },
+                ],
+                attributes: ['message', 'id'],
+                limit: 10,  // Limit the results to 10 messages
+                order: [['id', 'DESC']]  // Order by id descending to get the most recent messages first
+            });
+        }
+        else {
+            messages = await groupMessage.findAll({
+                where: whereClause,
+                include: [
+                    {
+                        model: user,
+                        attributes: ['name']
+                    },
+                ],
+                attributes: ['message', 'id'],
+                limit: 10,  // Limit the results to 10 messages
+                order: [['id', 'DESC']]  // Order by id descending to get the most recent messages first
+            });
+
+        }
+
+        // Fetch 10 messages (either from the oldest message or based on oldestMessageId)
 
          //generate a token to store group details
          const groupToken = tokenVerify.generateToken(groupId.id,groupName)
@@ -105,25 +125,29 @@ exports.getChat = async (req,res,next)=>{
          }
 
         // If no messages are found, return a 404 response
-        if (messages.length === 0) {
-            data.message = 'No chats yet';
-            return res.status(404).json(data);
-        }
+        // if (messages.length === 0) {
+        //     data.message = 'No chats yet for today';
+        //     data.todayFirstMessage = true;
+        //     return res.status(404).json(data);
+        // }
 
         // Reverse the messages to return them in ascending order (oldest first)
-        const reversedMessages = messages.reverse();
-        const chats = reversedMessages.map((element) => ({
+        // const reversedMessages = messages.reverse();
+        const chats = messages.map((element) => ({
             message: element.message,
             name: element.user.name
         }));
 
         data.messages = chats; //add chats to the data to be sent
 
+        if (messages.length < 10){
+            data.todayFirstMessage = true
+        }
 
         // Get the latest message ID from the reversed messages
-        const latestMessageId = reversedMessages[reversedMessages.length - 1].id;
+        const oldMessageId = messages[messages.length-1].id;
 
-        data.latestMessageId = latestMessageId; //add lastMessageId to the data to be snet
+        data.oldestMessageId = oldMessageId; //add lastMessageId to the data to be snet
 
         return res.status(200).json(data);
            
