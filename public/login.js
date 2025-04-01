@@ -1,3 +1,5 @@
+localStorage.clear();
+
 document.getElementById('loginForm').addEventListener('submit', function(event) {
   event.preventDefault(); // Prevent form submission
 
